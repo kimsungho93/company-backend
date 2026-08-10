@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    # 기본값을 일부러 두지 않았다. 기본값을 두면 운영에서 엉뚱한 DB에 조용히 붙는다.
+    # 환경변수가 비면 기동에 실패하는데, 메시지가 'url' must start with "jdbc" 로 나온다.
+    # 플레이스홀더가 그대로 넘어가서 생기는 것이니 DB_URL 이 안 들어왔다는 뜻으로 읽으면 된다.
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      # 앱이 운영 스키마를 절대 건드리지 않는다. 엔티티와 다르면 기동을 실패시켜 알린다.
+      # 스키마 변경은 마이그레이션 도구(Flyway 등)로 하고 앱은 검증만 한다.
+      ddl-auto: validate

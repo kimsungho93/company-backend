@@ -1,0 +1,13 @@
+# datasource 는 여기 없다. TestcontainersConfiguration 의 @ServiceConnection 이 꽂아준다.
+#
+# 이 파일은 main 의 application.yaml 을 병합하지 않고 통째로 가린다.
+# main 에만 프로퍼티를 추가하면 테스트에서 조용히 빠지므로 두 파일을 같이 볼 것.
+spring:
+  application:
+    name: company-backend
+
+  jpa:
+    hibernate:
+      # 컨테이너가 매번 새로 뜨지만, 한 실행 안에서도 깨끗하게 시작하도록 명시해둔다.
+      ddl-auto: create-drop
+    open-in-view: false

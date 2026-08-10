@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    # compose.yaml 의 company-db 컨테이너. 계정은 MYSQL_ROOT_PASSWORD 와 일치해야 한다.
+    # 로컬 도커 전용이라 커밋해도 된다.
+    url: jdbc:mysql://localhost:3306/company
+    username: root
+    password: secret
+
+  jpa:
+    hibernate:
+      # 엔티티 기준으로 테이블 자동 반영. update 는 추가만 하고 삭제·타입변경은 안 한다.
+      ddl-auto: update

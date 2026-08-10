@@ -1,0 +1,22 @@
+services:
+  company-db:
+    image: 'mysql:8.4'
+    container_name: company-db
+    environment:
+      MYSQL_ROOT_PASSWORD: 'secret'
+      MYSQL_DATABASE: 'company'
+    ports:
+      # 반드시 127.0.0.1 을 붙인다. '3306:3306' 으로 두면 0.0.0.0 에 바인딩돼서
+      # 같은 공유기·사내망에 있는 아무 기기나 root/secret 으로 이 DB에 접속할 수 있다.
+      - '127.0.0.1:3306:3306'
+    volumes:
+      - company-db-data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-uroot', '-psecret']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+volumes:
+  company-db-data:

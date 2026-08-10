@@ -1,3 +1,13 @@
+# 모든 환경 공통 설정. 환경별 값은 application-{프로필}.yaml 에 둔다.
+# 공통 파일과 프로필 파일은 병합된다(프로필 쪽이 우선).
 spring:
   application:
     name: company-backend
+
+  profiles:
+    # 프로필을 지정하지 않고 실행하면 local 이 켜진다. 운영값이 실수로 잡히는 일이 없도록.
+    default: local
+
+  jpa:
+    # true(기본)면 응답을 다 내보낼 때까지 DB 커넥션을 물고 있어 풀이 먼저 마른다.
+    open-in-view: false
