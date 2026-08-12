@@ -1,5 +1,9 @@
 HELP.md
+
+### Claude Code — 로컬 전용, 저장소에 올리지 않는다 ###
 CLAUDE.md
+.claude/
+
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
