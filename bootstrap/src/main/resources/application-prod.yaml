@@ -12,3 +12,9 @@ spring:
       # 앱이 운영 스키마를 절대 건드리지 않는다. 엔티티와 다르면 기동을 실패시켜 알린다.
       # 스키마 변경은 마이그레이션 도구(Flyway 등)로 하고 앱은 검증만 한다.
       ddl-auto: validate
+
+app:
+  cors:
+    # 여러 개면 쉼표로 구분한다. 여기도 기본값을 두지 않는다 -
+    # 기본값이 있으면 운영에 개발 오리진이 열린 채로 나갈 수 있다.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}

@@ -10,3 +10,8 @@ spring:
     hibernate:
       # 엔티티 기준으로 테이블 자동 반영. update 는 추가만 하고 삭제·타입변경은 안 한다.
       ddl-auto: update
+
+app:
+  cors:
+    # Vite 개발 서버. credentials 를 허용하므로 "*" 를 쓸 수 없어 명시한다.
+    allowed-origins: http://localhost:5173
