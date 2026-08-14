@@ -8,10 +8,16 @@ spring:
 
   jpa:
     hibernate:
-      # 엔티티 기준으로 테이블 자동 반영. update 는 추가만 하고 삭제·타입변경은 안 한다.
+      # 엔티티 기준으로 테이블 자동 반영. 컬럼 추가는 물론 varchar 길이 변경까지 반영된다(확인함).
+      # 다만 줄이는 방향은 기존 데이터가 새 길이를 넘으면 기동이 실패한다. 스키마를 바꾼 뒤에는
+      # SHOW COLUMNS 로 실제 결과를 확인할 것 - update 가 무엇을 했는지 조용히 지나간다.
       ddl-auto: update
 
 app:
   cors:
     # Vite 개발 서버. credentials 를 허용하므로 "*" 를 쓸 수 없어 명시한다.
+    # 다만 개발 중에는 vite proxy 가 같은 오리진을 만들어서 이 설정을 안 타는 게 보통이다.
     allowed-origins: http://localhost:5173
+  jwt:
+    # 로컬 전용. HS256 이라 32바이트 이상이어야 한다.
+    secret: local-dev-only-jwt-secret-please-change-in-production
