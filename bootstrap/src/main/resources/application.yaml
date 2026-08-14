@@ -11,3 +11,9 @@ spring:
   jpa:
     # true(기본)면 응답을 다 내보낼 때까지 DB 커넥션을 물고 있어 풀이 먼저 마른다.
     open-in-view: false
+    properties:
+      hibernate:
+        # Instant 를 DB에 쓸 때 기준 타임존. 지정하지 않으면 JVM 기본값을 따라가서
+        # 로컬(KST)과 도커 배포(UTC)가 서로 다른 값을 쓰게 된다.
+        jdbc:
+          time_zone: UTC
