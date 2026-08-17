@@ -10,6 +10,9 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    // 엔트리포인트가 필터 계층에서 JSON 을 직접 써야 해서 ObjectMapper 타입이 필요하다.
+    // Boot 4 는 jackson 도 슬라이스로 분리해서 webmvc 만으로는 컴파일 클래스패스에 없다.
+    implementation 'org.springframework.boot:spring-boot-starter-jackson'
     runtimeOnly 'com.mysql:mysql-connector-j'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'

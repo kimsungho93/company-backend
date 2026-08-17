@@ -1,5 +1,8 @@
 package com.ksh.companybackend.user.application;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -41,7 +44,27 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    public AccessTokenClaims parseAccessToken(String token) {
+        Claims claims;
+        try {
+            claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+        } catch (ExpiredJwtException e) {
+            throw new TokenExpiredException();
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new InvalidTokenException();
+        }
+
+        if (!ACCESS_TOKEN_TYPE.equals(claims.get(TOKEN_TYPE_CLAIM, String.class))) {
+            throw new InvalidTokenException();
+        }
+
+        return new AccessTokenClaims(Long.valueOf(claims.getSubject()), claims.get("email", String.class));
+    }
+
     public long getAccessTokenTtlSeconds() {
         return accessTokenTtl.toSeconds();
+    }
+
+    public record AccessTokenClaims(Long userId, String email) {
     }
 }

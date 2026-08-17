@@ -18,4 +18,8 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // 슬라이스 스타터가 아니라 코어 테스트 스타터다. 이 모듈은 스프링 컨텍스트 없이
+    // 순수 단위 테스트만 하므로 JUnit·AssertJ 만 있으면 된다.
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
