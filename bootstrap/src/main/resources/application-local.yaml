@@ -21,3 +21,6 @@ app:
   jwt:
     # 로컬 전용. HS256 이라 32바이트 이상이어야 한다.
     secret: local-dev-only-jwt-secret-please-change-in-production
+  refresh-token:
+    # 로컬은 http 라 Secure 를 붙이면 쿠키가 아예 전송되지 않는다.
+    cookie-secure: false

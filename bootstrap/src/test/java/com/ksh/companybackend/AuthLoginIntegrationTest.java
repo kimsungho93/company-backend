@@ -1,11 +1,15 @@
 package com.ksh.companybackend;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.ksh.companybackend.user.domain.RefreshToken;
+import com.ksh.companybackend.user.domain.RefreshTokenRepository;
 import com.ksh.companybackend.user.domain.User;
 import com.ksh.companybackend.user.domain.UserRepository;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +20,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
@@ -32,6 +37,9 @@ class AuthLoginIntegrationTest {
 
     @Autowired
     private UserRepository users;
+
+    @Autowired
+    private RefreshTokenRepository refreshTokens;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -56,6 +64,36 @@ class AuthLoginIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.expiresIn").value(1800));
+    }
+
+    @Test
+    @DisplayName("로그인하면 refresh 토큰을 httpOnly 쿠키로 내려준다")
+    void loginSetsRefreshCookie() throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body(EMAIL, PASSWORD)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        Cookie cookie = result.getResponse().getCookie("refreshToken");
+        assertThat(cookie).isNotNull();
+        assertThat(cookie.getValue()).isNotBlank();
+        assertThat(cookie.isHttpOnly()).isTrue();
+        assertThat(cookie.getPath()).isEqualTo("/api/auth");
+    }
+
+    @Test
+    @DisplayName("쿠키로 나간 원문은 DB 에 해시로만 남는다")
+    void storesOnlyTheHashOfTheIssuedToken() throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body(EMAIL, PASSWORD)))
+                .andReturn();
+
+        String rawValue = result.getResponse().getCookie("refreshToken").getValue();
+
+        assertThat(refreshTokens.findByTokenHash(RefreshToken.hash(rawValue))).isPresent();
+        assertThat(refreshTokens.findByTokenHash(rawValue)).isEmpty();
     }
 
     @Test

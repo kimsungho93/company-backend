@@ -24,3 +24,6 @@ app:
   jwt:
     secret: test-only-jwt-secret-value-at-least-32-bytes-long
     access-token-ttl: 30m
+  refresh-token:
+    ttl: 14d
+    cookie-secure: false
