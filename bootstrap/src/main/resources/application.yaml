@@ -13,14 +13,16 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        # Instant 를 DB에 쓸 때 기준 타임존. 반드시 박아둘 것 - 비우면 JVM 기본값을
-        # 따라가서 로컬(KST)과 컨테이너(UTC)가 같은 컬럼에 9시간 어긋난 값을 쓴다.
+        # 시각을 KST 로 저장한다. 한국에서만 쓰는 시스템이라 로그와 DB 가 같은 값을
+        # 보여주는 쪽이 낫다. 컨테이너 TZ 도 같이 맞춰야 한다(compose.yaml, Railway).
         #
-        # 한국에서만 쓰는 시스템이라 UTC 가 아니라 KST 로 맞췄다. 로그·DB·화면이
-        # 전부 같은 시각을 보여주는 쪽이 매일 이득이다. 대신 컨테이너 TZ 도 같이
-        # 맞춰야 한다 - 한쪽만 바꾸면 로그와 DB 가 어긋나 지금보다 나빠진다.
+        # 아래 두 줄이 모두 있어야 한다. preferred_instant_jdbc_type 이 없으면
+        # Hibernate 가 Instant 를 TIMESTAMP_UTC 로 매핑해 time_zone 을 무시하고
+        # UTC 로 박는다. 이것만 빠지면 조용히 9시간 어긋난다(실측함).
         jdbc:
           time_zone: Asia/Seoul
+        type:
+          preferred_instant_jdbc_type: TIMESTAMP
 
 app:
   jwt:
