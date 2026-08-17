@@ -40,6 +40,7 @@ public class User {
     @Column(nullable = false, length = 20)
     private UserStatus status;
 
+    @Getter
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;

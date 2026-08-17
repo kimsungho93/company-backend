@@ -3,6 +3,8 @@ HELP.md
 ### Claude Code — 로컬 전용, 저장소에 올리지 않는다 ###
 CLAUDE.md
 .claude/
+# 프론트에서 온 작업 요청. 처리하면 지우는 임시 문서라 이력에 남길 것이 없다.
+docs/requests/
 
 .gradle
 build/
