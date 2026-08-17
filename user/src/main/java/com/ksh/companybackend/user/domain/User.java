@@ -2,6 +2,8 @@ package com.ksh.companybackend.user.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,6 +36,15 @@ public class User {
     private String name;
 
     @Getter
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private UserStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role;
+
+    @Getter
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -41,6 +52,8 @@ public class User {
         this.email = email;
         this.password = password;
         this.name = name;
+        this.status = UserStatus.PENDING;
+        this.role = Role.USER;
         this.createdAt = Instant.now();
     }
 
@@ -50,5 +63,21 @@ public class User {
 
     public boolean matchesPassword(String rawPassword, PasswordEncoder encoder) {
         return encoder.matches(rawPassword, this.password);
+    }
+
+    public void approve() {
+        this.status = UserStatus.APPROVED;
+    }
+
+    public void reject() {
+        this.status = UserStatus.REJECTED;
+    }
+
+    public boolean isAdmin() {
+        return role == Role.ADMIN;
+    }
+
+    public void grantAdmin() {
+        this.role = Role.ADMIN;
     }
 }

@@ -26,7 +26,10 @@ public class LocalUserSeeder {
             if (users.findByEmail(EMAIL).isPresent()) {
                 return;
             }
-            users.save(User.create(EMAIL, encoder.encode(PASSWORD), NAME));
+            User user = User.create(EMAIL, encoder.encode(PASSWORD), NAME);
+            user.approve();
+            users.save(user);
+
             log.info("로컬 테스트 계정 생성: {} / {}", EMAIL, PASSWORD);
         };
     }

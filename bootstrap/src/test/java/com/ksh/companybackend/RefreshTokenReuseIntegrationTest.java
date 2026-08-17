@@ -45,7 +45,10 @@ class RefreshTokenReuseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        users.save(User.create(EMAIL, passwordEncoder.encode(PASSWORD), "테스트"));
+        User user = User.create(EMAIL, passwordEncoder.encode(PASSWORD), "테스트");
+        user.approve();
+        users.save(user);
+
         userId = users.findByEmail(EMAIL).orElseThrow().getId();
     }
 

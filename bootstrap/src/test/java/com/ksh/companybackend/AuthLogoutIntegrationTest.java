@@ -40,7 +40,9 @@ class AuthLogoutIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        users.save(User.create(EMAIL, passwordEncoder.encode(PASSWORD), "테스트"));
+        User user = User.create(EMAIL, passwordEncoder.encode(PASSWORD), "테스트");
+        user.approve();
+        users.save(user);
     }
 
     private Cookie login() throws Exception {

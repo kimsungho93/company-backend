@@ -48,7 +48,10 @@ class AuthReissueIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        users.save(User.create(EMAIL, passwordEncoder.encode(PASSWORD), "테스트"));
+        User user = User.create(EMAIL, passwordEncoder.encode(PASSWORD), "테스트");
+        user.approve();
+        users.save(user);
+
         userId = users.findByEmail(EMAIL).orElseThrow().getId();
     }
 
@@ -90,6 +93,18 @@ class AuthReissueIntegrationTest {
 
         RefreshToken used = refreshTokens.findByTokenHash(RefreshToken.hash(issued.getValue())).orElseThrow();
         assertThat(used.isRevoked()).isTrue();
+    }
+
+    @Test
+    @DisplayName("승인이 취소되면 재발급도 막힌다 - 남은 세션이 갱신으로 연장되지 않는다")
+    void rejectsReissueAfterApprovalRevoked() throws Exception {
+        Cookie issued = login();
+
+        users.findByEmail(EMAIL).orElseThrow().reject();
+
+        mockMvc.perform(post("/api/auth/reissue").cookie(issued))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("SIGNUP_REJECTED"));
     }
 
     @Test

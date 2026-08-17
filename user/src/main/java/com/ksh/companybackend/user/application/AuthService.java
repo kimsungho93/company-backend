@@ -7,6 +7,7 @@ import com.ksh.companybackend.user.domain.RefreshToken;
 import com.ksh.companybackend.user.domain.RefreshTokenRepository;
 import com.ksh.companybackend.user.domain.User;
 import com.ksh.companybackend.user.domain.UserRepository;
+import com.ksh.companybackend.user.domain.UserStatus;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -53,6 +54,8 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
 
+        verifyUsable(user);
+
         return issueTokensFor(user);
     }
 
@@ -76,9 +79,10 @@ public class AuthService {
             throw new TokenExpiredException();
         }
 
-        used.revoke();
-
         User user = userRepository.findById(used.getUserId()).orElseThrow(InvalidTokenException::new);
+        verifyUsable(user);
+
+        used.revoke();
 
         return issueTokensFor(user);
     }
@@ -91,6 +95,15 @@ public class AuthService {
 
         refreshTokenRepository.findByTokenHash(RefreshToken.hash(rawRefreshToken))
                 .ifPresent(RefreshToken::revoke);
+    }
+
+    private void verifyUsable(User user) {
+        if (user.getStatus() == UserStatus.REJECTED) {
+            throw new SignupRejectedException();
+        }
+        if (user.getStatus() != UserStatus.APPROVED) {
+            throw new ApprovalPendingException();
+        }
     }
 
     private void revokeEveryTokenOf(Long userId) {

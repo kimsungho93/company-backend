@@ -44,9 +44,24 @@ class AuthLoginIntegrationTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    private static final String PENDING_EMAIL = "pending@ibslab.com";
+    private static final String REJECTED_EMAIL = "rejected@ibslab.com";
+
     @BeforeEach
     void setUp() {
-        users.save(User.create(EMAIL, passwordEncoder.encode(PASSWORD), "테스트"));
+        User approved = newUser(EMAIL);
+        approved.approve();
+        users.save(approved);
+
+        users.save(newUser(PENDING_EMAIL));
+
+        User rejected = newUser(REJECTED_EMAIL);
+        rejected.reject();
+        users.save(rejected);
+    }
+
+    private User newUser(String email) {
+        return User.create(email, passwordEncoder.encode(PASSWORD), "테스트");
     }
 
     private String body(String email, String password) {
@@ -104,6 +119,36 @@ class AuthLoginIntegrationTest {
                         .content(body("TEST@IBSLAB.COM", PASSWORD)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("승인 대기 중이면 403 APPROVAL_PENDING")
+    void rejectsPendingUser() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body(PENDING_EMAIL, PASSWORD)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("APPROVAL_PENDING"));
+    }
+
+    @Test
+    @DisplayName("가입이 거절됐으면 403 SIGNUP_REJECTED")
+    void rejectsRejectedUser() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body(REJECTED_EMAIL, PASSWORD)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("SIGNUP_REJECTED"));
+    }
+
+    @Test
+    @DisplayName("비밀번호가 틀리면 상태를 알려주지 않는다 - 검사 순서가 뒤집히면 깨진다")
+    void doesNotRevealStatusUntilPasswordMatches() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body(PENDING_EMAIL, "wrong-password")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"));
     }
 
     @Test
