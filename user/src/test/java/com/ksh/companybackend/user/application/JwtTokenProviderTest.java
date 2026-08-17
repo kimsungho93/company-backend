@@ -65,6 +65,20 @@ class JwtTokenProviderTest {
     }
 
     @Test
+    @DisplayName("subject 가 숫자가 아니면 InvalidTokenException")
+    void rejectsNonNumericSubject() {
+        String token = Jwts.builder()
+                .subject("not-a-number")
+                .claim("typ", "access")
+                .expiration(Date.from(Instant.now().plusSeconds(600)))
+                .signWith(new SecretKeySpec(SECRET.getBytes(StandardCharsets.UTF_8), "HmacSHA256"))
+                .compact();
+
+        assertThatThrownBy(() -> provider.parseAccessToken(token))
+                .isInstanceOf(InvalidTokenException.class);
+    }
+
+    @Test
     @DisplayName("JWT 형식이 아니면 InvalidTokenException")
     void rejectsGarbage() {
         assertThatThrownBy(() -> provider.parseAccessToken("not-a-jwt"))

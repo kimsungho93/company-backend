@@ -45,20 +45,19 @@ public class JwtTokenProvider {
     }
 
     public AccessTokenClaims parseAccessToken(String token) {
-        Claims claims;
         try {
-            claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+            Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+
+            if (!ACCESS_TOKEN_TYPE.equals(claims.get(TOKEN_TYPE_CLAIM, String.class))) {
+                throw new InvalidTokenException();
+            }
+
+            return new AccessTokenClaims(Long.valueOf(claims.getSubject()), claims.get("email", String.class));
         } catch (ExpiredJwtException e) {
             throw new TokenExpiredException();
         } catch (JwtException | IllegalArgumentException e) {
             throw new InvalidTokenException();
         }
-
-        if (!ACCESS_TOKEN_TYPE.equals(claims.get(TOKEN_TYPE_CLAIM, String.class))) {
-            throw new InvalidTokenException();
-        }
-
-        return new AccessTokenClaims(Long.valueOf(claims.getSubject()), claims.get("email", String.class));
     }
 
     public long getAccessTokenTtlSeconds() {
