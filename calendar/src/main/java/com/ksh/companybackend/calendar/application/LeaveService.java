@@ -7,6 +7,8 @@ import com.ksh.companybackend.calendar.domain.LeaveKind;
 import com.ksh.companybackend.calendar.domain.LeaveOverlapException;
 import com.ksh.companybackend.calendar.domain.LeaveRepository;
 import com.ksh.companybackend.calendar.domain.UserDirectory;
+import java.util.List;
+import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,15 +29,18 @@ public class LeaveService {
         Leave leave = Leave.of(userId, kind, period);
         verifyNoOverlap(leave);
 
-        Leave saved = saveOrReportOverlap(leave);
+        return LeaveDetail.of(saveOrReportOverlap(leave), userDirectory.nameOf(userId));
+    }
 
-        return new LeaveDetail(
-                saved.getId(),
-                userId,
-                userDirectory.nameOf(userId),
-                saved.getKind(),
-                saved.period().from(),
-                saved.period().to());
+    @Transactional(readOnly = true)
+    public List<LeaveDetail> findAllActiveBetween(DateRange window) {
+        List<Leave> leaves = leaveRepository.findAllActiveBetween(window.from(), window.to());
+        Map<Long, String> names = userDirectory.namesOf(
+                leaves.stream().map(Leave::getUserId).distinct().toList());
+
+        return leaves.stream()
+                .map(leave -> LeaveDetail.of(leave, names.get(leave.getUserId())))
+                .toList();
     }
 
     private Leave saveOrReportOverlap(Leave leave) {
