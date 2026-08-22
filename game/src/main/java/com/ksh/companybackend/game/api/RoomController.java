@@ -42,6 +42,8 @@ public class RoomController {
     @PostMapping("/{id}/join")
     public RoomResponse join(@AuthenticationPrincipal Long callerId, @PathVariable Long id,
             @RequestBody(required = false) RoomJoinRequest request) {
-        return RoomResponse.from(roomService.join(callerId, id, request == null ? null : request.password()));
+        String password = request == null ? null : request.password();
+
+        return RoomResponse.from(roomService.join(callerId, id, password));
     }
 }

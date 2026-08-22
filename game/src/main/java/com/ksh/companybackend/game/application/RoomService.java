@@ -35,6 +35,7 @@ public class RoomService {
 
     public RoomSummary open(Long hostId, String name, String password) {
         Room room = roomRegistry.open(name, hash(password), hostId);
+        roomRegistry.leaveOtherRooms(hostId, room.id());
 
         return summarize(room);
     }
@@ -43,6 +44,7 @@ public class RoomService {
         if (!roomRegistry.find(roomId).opensWith(password, passwordEncoder)) {
             throw new WrongRoomPasswordException();
         }
+        roomRegistry.leaveOtherRooms(userId, roomId);
 
         return summarize(roomRegistry.join(roomId, userId));
     }
