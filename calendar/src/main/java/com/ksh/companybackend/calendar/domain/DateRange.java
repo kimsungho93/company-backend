@@ -18,8 +18,4 @@ public record DateRange(LocalDate from, LocalDate to) {
     public long days() {
         return ChronoUnit.DAYS.between(from, to) + 1;
     }
-
-    public boolean overlaps(DateRange other) {
-        return !from.isAfter(other.to) && !to.isBefore(other.from);
-    }
 }

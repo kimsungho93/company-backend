@@ -30,15 +30,4 @@ class DateRangeTest {
         assertThat(new DateRange(MON, MON).days()).isEqualTo(1);
         assertThat(new DateRange(MON, MON.plusDays(3)).days()).isEqualTo(4);
     }
-
-    @Test
-    @DisplayName("겹침은 양끝이 닿기만 해도 참이다")
-    void overlapsIncludesBothEnds() {
-        DateRange week = new DateRange(MON, MON.plusDays(3));
-
-        assertThat(week.overlaps(new DateRange(MON.plusDays(3), MON.plusDays(5)))).isTrue();
-        assertThat(week.overlaps(new DateRange(MON.minusDays(5), MON))).isTrue();
-        assertThat(week.overlaps(new DateRange(MON.plusDays(4), MON.plusDays(5)))).isFalse();
-        assertThat(week.overlaps(new DateRange(MON.minusDays(5), MON.minusDays(1)))).isFalse();
-    }
 }

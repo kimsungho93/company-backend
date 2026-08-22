@@ -69,10 +69,6 @@ public class Leave {
         return new DateRange(startDate, endDate);
     }
 
-    public boolean isActiveBetween(DateRange window) {
-        return period().overlaps(window);
-    }
-
     public boolean belongsTo(Long userId) {
         return this.userId.equals(userId);
     }

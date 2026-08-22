@@ -49,15 +49,6 @@ class LeaveTest {
     }
 
     @Test
-    @DisplayName("기간에 걸치는지 스스로 판단한다")
-    void knowsWhetherItIsActive() {
-        Leave leave = Leave.of(1L, LeaveKind.ANNUAL, days(4));
-
-        assertThat(leave.isActiveBetween(new DateRange(MON.plusDays(3), MON.plusDays(5)))).isTrue();
-        assertThat(leave.isActiveBetween(new DateRange(MON.plusDays(4), MON.plusDays(5)))).isFalse();
-    }
-
-    @Test
     @DisplayName("본인 것인지 안다")
     void knowsItsOwner() {
         Leave leave = Leave.of(7L, LeaveKind.ANNUAL, days(1));
