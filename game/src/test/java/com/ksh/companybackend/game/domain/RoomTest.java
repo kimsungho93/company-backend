@@ -8,16 +8,20 @@ import org.junit.jupiter.api.Test;
 
 class RoomTest {
 
-    private static final Long HOST = 1L;
+    private static final Player HOST = new Player(1L, "김성호");
 
     private Room room() {
         return Room.create(7L, "점심내기 한판", null, HOST);
     }
 
+    private Player player(long userId) {
+        return new Player(userId, "참가자" + userId);
+    }
+
     private Room withPlayers(int count) {
         Room room = room();
-        for (long id = 2; id <= count; id++) {
-            room = room.join(id);
+        for (long userId = 2; userId <= count; userId++) {
+            room = room.join(player(userId));
         }
 
         return room;
@@ -29,9 +33,15 @@ class RoomTest {
         Room room = room();
 
         assertThat(room.playerCount()).isEqualTo(1);
-        assertThat(room.hostId()).isEqualTo(HOST);
-        assertThat(room.has(HOST)).isTrue();
+        assertThat(room.hostId()).isEqualTo(HOST.userId());
+        assertThat(room.has(HOST.userId())).isTrue();
         assertThat(room.status()).isEqualTo(RoomStatus.WAITING);
+    }
+
+    @Test
+    @DisplayName("방장 이름을 방이 직접 안다 - 사용자 조회가 필요 없다")
+    void knowsItsHostName() {
+        assertThat(room().hostName()).isEqualTo("김성호");
     }
 
     @Test
@@ -40,13 +50,13 @@ class RoomTest {
         Room full = withPlayers(10);
 
         assertThat(full.playerCount()).isEqualTo(10);
-        assertThatThrownBy(() -> full.join(11L)).isInstanceOf(RoomFullException.class);
+        assertThatThrownBy(() -> full.join(player(11L))).isInstanceOf(RoomFullException.class);
     }
 
     @Test
     @DisplayName("이미 들어온 사람이 또 들어와도 인원이 늘지 않는다")
     void joiningTwiceDoesNotCount() {
-        Room room = room().join(2L).join(2L);
+        Room room = room().join(player(2L)).join(player(2L));
 
         assertThat(room.playerCount()).isEqualTo(2);
     }
@@ -62,15 +72,18 @@ class RoomTest {
     @Test
     @DisplayName("마지막 사람이 나가면 빈 방이 된다")
     void becomesEmptyWhenLastLeaves() {
-        assertThat(room().leave(HOST).isEmpty()).isTrue();
+        assertThat(room().leave(HOST.userId()).isEmpty()).isTrue();
     }
 
     @Test
-    @DisplayName("방장이 나가면 먼저 들어온 순으로 방장이 넘어간다")
+    @DisplayName("방장이 나가면 먼저 들어온 사람에게 넘어가고 이름도 따라간다")
     void handsHostOverInJoinOrder() {
-        Room room = room().join(2L).join(3L);
+        Room room = room().join(player(2L)).join(player(3L));
 
-        assertThat(room.leave(HOST).hostId()).isEqualTo(2L);
+        Room afterHostLeft = room.leave(HOST.userId());
+
+        assertThat(afterHostLeft.hostId()).isEqualTo(2L);
+        assertThat(afterHostLeft.hostName()).isEqualTo("참가자2");
     }
 
     @Test

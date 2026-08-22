@@ -299,7 +299,7 @@ class RoomIntegrationTest {
     }
 
     @Test
-    @DisplayName("방이 몇이든 쿼리는 하나 - 방장 이름을 한 번에 받는다")
+    @DisplayName("방 목록은 DB 를 치지 않는다 - 방장 이름을 Player 가 들고 있다")
     void doesNotQueryPerHost() throws Exception {
         for (int i = 0; i < 4; i++) {
             createdRoomId(tokenFor("h" + i + "@ibslab.com", "방장" + i), "방 " + i);
@@ -315,7 +315,7 @@ class RoomIntegrationTest {
         listedRoomIds();
 
         assertThat(statistics.getPrepareStatementCount())
-                .describedAs("방장 이름을 읽는 데 쓴 쿼리 수")
-                .isEqualTo(1);
+                .describedAs("방 목록을 읽는 데 쓴 쿼리 수")
+                .isEqualTo(0);
     }
 }

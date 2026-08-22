@@ -1,7 +1,7 @@
 package com.ksh.companybackend.game.domain;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.List;
+import java.util.stream.Stream;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 public final class Room {
@@ -12,10 +12,10 @@ public final class Room {
     private final String name;
     private final String passwordHash;
     private final Long hostId;
-    private final Set<Long> players;
+    private final List<Player> players;
     private final RoomStatus status;
 
-    private Room(Long id, String name, String passwordHash, Long hostId, Set<Long> players, RoomStatus status) {
+    private Room(Long id, String name, String passwordHash, Long hostId, List<Player> players, RoomStatus status) {
         this.id = id;
         this.name = name;
         this.passwordHash = passwordHash;
@@ -24,35 +24,29 @@ public final class Room {
         this.status = status;
     }
 
-    public static Room create(Long id, String name, String passwordHash, Long hostId) {
-        Set<Long> players = new LinkedHashSet<>();
-        players.add(hostId);
-
-        return new Room(id, name, passwordHash, hostId, players, RoomStatus.WAITING);
+    public static Room create(Long id, String name, String passwordHash, Player host) {
+        return new Room(id, name, passwordHash, host.userId(), List.of(host), RoomStatus.WAITING);
     }
 
-    public Room join(Long userId) {
-        if (players.contains(userId)) {
+    public Room join(Player player) {
+        if (has(player.userId())) {
             return this;
         }
         if (players.size() >= CAPACITY) {
             throw new RoomFullException();
         }
 
-        Set<Long> joined = new LinkedHashSet<>(players);
-        joined.add(userId);
-
-        return new Room(id, name, passwordHash, hostId, joined, status);
+        return new Room(id, name, passwordHash, hostId,
+                Stream.concat(players.stream(), Stream.of(player)).toList(), status);
     }
 
     public Room leave(Long userId) {
-        if (!players.contains(userId)) {
+        if (!has(userId)) {
             return this;
         }
 
-        Set<Long> remaining = new LinkedHashSet<>(players);
-        remaining.remove(userId);
-        Long nextHost = hostId.equals(userId) ? remaining.stream().findFirst().orElse(null) : hostId;
+        List<Player> remaining = players.stream().filter(player -> !player.userId().equals(userId)).toList();
+        Long nextHost = hostId.equals(userId) ? firstUserId(remaining) : hostId;
 
         return new Room(id, name, passwordHash, nextHost, remaining, status);
     }
@@ -70,7 +64,7 @@ public final class Room {
     }
 
     public boolean has(Long userId) {
-        return players.contains(userId);
+        return players.stream().anyMatch(player -> player.userId().equals(userId));
     }
 
     public int playerCount() {
@@ -93,7 +87,19 @@ public final class Room {
         return hostId;
     }
 
+    public String hostName() {
+        return players.stream()
+                .filter(player -> player.userId().equals(hostId))
+                .findFirst()
+                .map(Player::name)
+                .orElse(null);
+    }
+
     public RoomStatus status() {
         return status;
+    }
+
+    private static Long firstUserId(List<Player> players) {
+        return players.stream().findFirst().map(Player::userId).orElse(null);
     }
 }

@@ -1,12 +1,12 @@
 package com.ksh.companybackend.game.application;
 
 import com.ksh.companybackend.game.application.dto.RoomSummary;
+import com.ksh.companybackend.game.domain.Player;
 import com.ksh.companybackend.game.domain.Room;
 import com.ksh.companybackend.game.domain.RoomRegistry;
 import com.ksh.companybackend.game.domain.UserDirectory;
 import com.ksh.companybackend.game.domain.WrongRoomPasswordException;
 import java.util.List;
-import java.util.Map;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -24,33 +24,30 @@ public class RoomService {
     }
 
     public List<RoomSummary> findAll() {
-        List<Room> rooms = roomRegistry.findAllNewestFirst();
-        Map<Long, String> hostNames = userDirectory.namesOf(
-                rooms.stream().map(Room::hostId).distinct().toList());
-
-        return rooms.stream()
-                .map(room -> RoomSummary.of(room, hostNames.get(room.hostId())))
+        return roomRegistry.findAllNewestFirst().stream()
+                .map(RoomSummary::of)
                 .toList();
     }
 
     public RoomSummary open(Long hostId, String name, String password) {
-        Room room = roomRegistry.open(name, hash(password), hostId);
+        Room room = roomRegistry.open(name, hash(password), seat(hostId));
         roomRegistry.leaveOtherRooms(hostId, room.id());
 
-        return summarize(room);
+        return RoomSummary.of(room);
     }
 
     public RoomSummary join(Long userId, Long roomId, String password) {
         if (!roomRegistry.find(roomId).opensWith(password, passwordEncoder)) {
             throw new WrongRoomPasswordException();
         }
+        Player player = seat(userId);
         roomRegistry.leaveOtherRooms(userId, roomId);
 
-        return summarize(roomRegistry.join(roomId, userId));
+        return RoomSummary.of(roomRegistry.join(roomId, player));
     }
 
-    private RoomSummary summarize(Room room) {
-        return RoomSummary.of(room, userDirectory.nameOf(room.hostId()));
+    private Player seat(Long userId) {
+        return new Player(userId, userDirectory.nameOf(userId));
     }
 
     private String hash(String password) {

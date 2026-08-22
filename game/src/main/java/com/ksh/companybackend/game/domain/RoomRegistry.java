@@ -28,15 +28,15 @@ public class RoomRegistry {
         return room;
     }
 
-    public Room open(String name, String passwordHash, Long hostId) {
-        Room room = Room.create(sequence.incrementAndGet(), name, passwordHash, hostId);
+    public Room open(String name, String passwordHash, Player host) {
+        Room room = Room.create(sequence.incrementAndGet(), name, passwordHash, host);
         rooms.put(room.id(), room);
 
         return room;
     }
 
-    public Room join(Long roomId, Long userId) {
-        Room joined = rooms.computeIfPresent(roomId, (id, room) -> room.join(userId));
+    public Room join(Long roomId, Player player) {
+        Room joined = rooms.computeIfPresent(roomId, (id, room) -> room.join(player));
         if (joined == null) {
             throw new RoomNotFoundException();
         }

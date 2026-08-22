@@ -6,8 +6,9 @@ import com.ksh.companybackend.game.domain.RoomStatus;
 public record RoomSummary(
         Long id, String name, String hostName, int playerCount, int capacity, boolean locked, RoomStatus status) {
 
-    public static RoomSummary of(Room room, String hostName) {
+    public static RoomSummary of(Room room) {
         return new RoomSummary(
-                room.id(), room.name(), hostName, room.playerCount(), room.capacity(), room.isLocked(), room.status());
+                room.id(), room.name(), room.hostName(), room.playerCount(),
+                room.capacity(), room.isLocked(), room.status());
     }
 }
