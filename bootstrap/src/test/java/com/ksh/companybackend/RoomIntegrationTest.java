@@ -10,7 +10,12 @@ import com.jayway.jsonpath.JsonPath;
 import com.ksh.companybackend.user.application.JwtTokenProvider;
 import com.ksh.companybackend.user.domain.User;
 import com.ksh.companybackend.user.domain.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceContext;
 import java.util.List;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,6 +46,12 @@ class RoomIntegrationTest {
 
     @Autowired
     private JwtTokenProvider tokenProvider;
+
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private String hostToken;
     private String guestToken;
@@ -285,5 +296,26 @@ class RoomIntegrationTest {
                 """).andExpect(status().isForbidden());
 
         assertThat(listedRoomIds()).describedAs("혼자 있던 방은 내가 빠지면 사라진다").contains(mine.intValue());
+    }
+
+    @Test
+    @DisplayName("방이 몇이든 쿼리는 하나 - 방장 이름을 한 번에 받는다")
+    void doesNotQueryPerHost() throws Exception {
+        for (int i = 0; i < 4; i++) {
+            createdRoomId(tokenFor("h" + i + "@ibslab.com", "방장" + i), "방 " + i);
+        }
+
+        // 1차 캐시가 살아 있으면 사용자 조회가 SQL 없이 끝나 N+1 이 관측되지 않는다.
+        entityManager.flush();
+        entityManager.clear();
+
+        Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        statistics.clear();
+
+        listedRoomIds();
+
+        assertThat(statistics.getPrepareStatementCount())
+                .describedAs("방장 이름을 읽는 데 쓴 쿼리 수")
+                .isEqualTo(1);
     }
 }
