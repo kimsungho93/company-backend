@@ -2,20 +2,21 @@ package com.ksh.companybackend.game.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class RoomTest {
 
-    private static final Player HOST = new Player(1L, "김성호");
+    private static final Player HOST = Player.seat(1L, "김성호");
 
     private Room room() {
         return Room.create(7L, "점심내기 한판", null, HOST);
     }
 
     private Player player(long userId) {
-        return new Player(userId, "참가자" + userId);
+        return Player.seat(userId, "참가자" + userId);
     }
 
     private Room withPlayers(int count) {
@@ -97,5 +98,14 @@ class RoomTest {
     void locksWhenPasswordIsSet() {
         assertThat(room().isLocked()).isFalse();
         assertThat(Room.create(7L, "비밀방", "hashed", HOST).isLocked()).isTrue();
+    }
+
+    @Test
+    @DisplayName("enter 하면 그 사람에게만 세션이 붙는다")
+    void bindsSessionOnEnter() {
+        Room room = room().join(player(2L)).enter(2L, "sess-2");
+
+        assertThat(room.players()).extracting(Player::userId, Player::sessionId)
+                .containsExactly(tuple(1L, null), tuple(2L, "sess-2"));
     }
 }

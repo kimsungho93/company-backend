@@ -51,6 +51,18 @@ public final class Room {
         return new Room(id, name, passwordHash, nextHost, remaining, status);
     }
 
+    public Room enter(Long userId, String sessionId) {
+        List<Player> entered = players.stream()
+                .map(player -> player.userId().equals(userId) ? player.withSession(sessionId) : player)
+                .toList();
+
+        return new Room(id, name, passwordHash, hostId, entered, status);
+    }
+
+    public List<Player> players() {
+        return players;
+    }
+
     public boolean opensWith(String rawPassword, PasswordEncoder encoder) {
         return !isLocked() || (rawPassword != null && encoder.matches(rawPassword, passwordHash));
     }

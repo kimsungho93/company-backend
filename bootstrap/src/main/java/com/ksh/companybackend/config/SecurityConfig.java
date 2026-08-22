@@ -47,6 +47,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/reissue",
                                 "/api/auth/logout").permitAll()
+                        // 핸드셰이크만 연다. 브라우저의 WebSocket 생성자는 헤더를 못 붙여서
+                        // 여기서 막으면 CONNECT 프레임까지 가지도 못한다.
+                        // 인증은 StompAuthenticationInterceptor 가 CONNECT 에서 한다.
+                        .requestMatchers("/api/ws").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
