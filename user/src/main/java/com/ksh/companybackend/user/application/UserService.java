@@ -26,6 +26,11 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    public boolean isAdmin(Long userId) {
+        return userRepository.findById(userId).map(User::isAdmin).orElse(false);
+    }
+
+    @Transactional(readOnly = true)
     public String nameOf(Long userId) {
         return userRepository.findById(userId).map(User::getName).orElse(null);
     }

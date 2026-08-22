@@ -4,7 +4,7 @@ import com.ksh.companybackend.calendar.domain.DateRange;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 
-public record LeaveSearchRequest(
+public record DateWindowRequest(
         @NotNull(message = "조회 시작일을 입력해 주세요.")
         LocalDate from,
 
