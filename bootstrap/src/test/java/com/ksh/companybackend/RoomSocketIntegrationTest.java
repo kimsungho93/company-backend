@@ -32,6 +32,7 @@ import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
@@ -148,6 +149,13 @@ class RoomSocketIntegrationTest {
         return frames;
     }
 
+    private void send(StompSession session, String destination, String json) {
+        StompHeaders headers = new StompHeaders();
+        headers.setDestination(destination);
+        headers.setContentType(MimeTypeUtils.APPLICATION_JSON);
+        session.send(headers, json.getBytes(StandardCharsets.UTF_8));
+    }
+
     private String next(BlockingQueue<String> frames) throws Exception {
         String frame = frames.poll(WAIT_SECONDS, TimeUnit.SECONDS);
         assertThat(frame).describedAs("브로드캐스트를 기다렸지만 오지 않았다").isNotNull();
@@ -227,5 +235,35 @@ class RoomSocketIntegrationTest {
 
         hostSession.disconnect();
         guestSession.disconnect();
+    }
+
+    @Test
+    @DisplayName("준비 상태를 보내면 브로드캐스트에 반영된다")
+    void broadcastsReadyChange() throws Exception {
+        StompSession guest = connect(guestToken);
+        BlockingQueue<String> frames = subscribe(guest, "/topic/rooms/" + roomId);
+        guest.send("/app/rooms/%d/enter".formatted(roomId), new byte[0]);
+        next(frames);
+
+        send(guest, "/app/rooms/%d/ready".formatted(roomId), "{\"ready\":true}");
+
+        String state = next(frames);
+        assertThat((List<Boolean>) JsonPath.read(state, "$.players[*].ready")).containsExactly(false, true);
+        guest.disconnect();
+    }
+
+    @Test
+    @DisplayName("방장이 아닌 사람이 시작하면 본인에게만 NOT_ROOM_HOST 가 온다")
+    void sendsErrorToTheCallerOnly() throws Exception {
+        StompSession guest = connect(guestToken);
+        BlockingQueue<String> errors = subscribe(guest, "/user/queue/errors");
+        BlockingQueue<String> room = subscribe(guest, "/topic/rooms/" + roomId);
+
+        guest.send("/app/rooms/%d/start".formatted(roomId), new byte[0]);
+
+        String error = next(errors);
+        assertThat((String) JsonPath.read(error, "$.code")).isEqualTo("NOT_ROOM_HOST");
+        assertThat(room.poll(1, TimeUnit.SECONDS)).describedAs("실패는 방에 브로드캐스트되지 않는다").isNull();
+        guest.disconnect();
     }
 }

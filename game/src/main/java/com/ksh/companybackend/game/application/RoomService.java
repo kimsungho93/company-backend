@@ -1,7 +1,7 @@
 package com.ksh.companybackend.game.application;
 
 import com.ksh.companybackend.game.application.dto.RoomSummary;
-import com.ksh.companybackend.game.domain.NotInRoomException;
+import com.ksh.companybackend.game.domain.Avatar;
 import com.ksh.companybackend.game.domain.Player;
 import com.ksh.companybackend.game.domain.Room;
 import com.ksh.companybackend.game.domain.RoomRegistry;
@@ -60,11 +60,24 @@ public class RoomService {
     }
 
     public void enter(Long callerId, Long roomId, String sessionId) {
-        if (!roomRegistry.find(roomId).has(callerId)) {
-            throw new NotInRoomException();
-        }
+        broadcaster.roomChanged(roomRegistry.update(roomId, room -> room.enter(callerId, sessionId)));
+    }
 
-        broadcaster.roomChanged(roomRegistry.enter(roomId, callerId, sessionId));
+    public void changeAvatar(Long callerId, Long roomId, Avatar avatar) {
+        broadcaster.roomChanged(roomRegistry.update(roomId, room -> room.changeAvatar(callerId, avatar)));
+    }
+
+    public void changeReady(Long callerId, Long roomId, boolean ready) {
+        broadcaster.roomChanged(roomRegistry.update(roomId, room -> room.changeReady(callerId, ready)));
+    }
+
+    public void transfer(Long callerId, Long roomId, Long newHostId) {
+        broadcaster.roomChanged(roomRegistry.update(roomId, room -> room.transferTo(callerId, newHostId)));
+    }
+
+    public void start(Long callerId, Long roomId) {
+        broadcaster.roomChanged(roomRegistry.update(roomId, room -> room.start(callerId)));
+        broadcaster.roomListChanged(findAll());
     }
 
     public void leave(Long callerId, Long roomId) {
