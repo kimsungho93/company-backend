@@ -1,5 +1,6 @@
 package com.ksh.companybackend.game.domain;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
@@ -97,6 +98,14 @@ public final class Room {
 
     public boolean has(Long userId) {
         return players.stream().anyMatch(player -> player.userId().equals(userId));
+    }
+
+    // POST /join 으로 자리는 잡았는데 소켓 enter 가 오지 않은 좌석. 탭을 닫으면 이렇게 남는다.
+    public List<Long> seatsNotEnteredBefore(Instant deadline) {
+        return players.stream()
+                .filter(player -> player.sessionId() == null && player.seatedAt().isBefore(deadline))
+                .map(Player::userId)
+                .toList();
     }
 
     public List<Player> players() {

@@ -7,6 +7,7 @@ import com.ksh.companybackend.game.domain.Room;
 import com.ksh.companybackend.game.domain.RoomRegistry;
 import com.ksh.companybackend.game.domain.UserDirectory;
 import com.ksh.companybackend.game.domain.WrongRoomPasswordException;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -39,7 +40,7 @@ public class RoomService {
 
     public RoomSummary open(Long hostId, String name, String password) {
         Room room = roomRegistry.open(name, hash(password), seat(hostId));
-        roomRegistry.leaveOtherRooms(hostId, room.id());
+        roomRegistry.leaveOtherRooms(hostId, room.id()).forEach(broadcaster::roomChanged);
         broadcaster.roomListChanged(findAll());
 
         return RoomSummary.of(room);
@@ -50,7 +51,7 @@ public class RoomService {
             throw new WrongRoomPasswordException();
         }
         Player player = seat(userId);
-        roomRegistry.leaveOtherRooms(userId, roomId);
+        roomRegistry.leaveOtherRooms(userId, roomId).forEach(broadcaster::roomChanged);
 
         Room joined = roomRegistry.join(roomId, player);
         broadcaster.roomChanged(joined);
@@ -80,13 +81,21 @@ public class RoomService {
         broadcaster.roomListChanged(findAll());
     }
 
+    public void leaveBySession(String sessionId) {
+        roomRegistry.findBySession(sessionId).ifPresent(seat -> leave(seat.userId(), seat.roomId()));
+    }
+
+    public void reclaimSeatsAbandonedBefore(Instant deadline) {
+        roomRegistry.abandonedSeats(deadline).forEach(seat -> leave(seat.userId(), seat.roomId()));
+    }
+
     public void leave(Long callerId, Long roomId) {
         roomRegistry.leave(roomId, callerId).ifPresent(broadcaster::roomChanged);
         broadcaster.roomListChanged(findAll());
     }
 
     private Player seat(Long userId) {
-        return Player.seat(userId, userDirectory.nameOf(userId));
+        return Player.seat(userId, userDirectory.nameOf(userId), Instant.now());
     }
 
     private String hash(String password) {

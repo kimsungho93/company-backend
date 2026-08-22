@@ -4,19 +4,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 
+import java.time.Instant;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class RoomTest {
 
-    private static final Player HOST = Player.seat(1L, "김성호");
+    private static final Instant SEATED = Instant.parse("2026-08-23T09:00:00Z");
+    private static final Player HOST = Player.seat(1L, "김성호", SEATED);
 
     private Room room() {
         return Room.create(7L, "점심내기 한판", null, HOST);
     }
 
     private Player player(long userId) {
-        return Player.seat(userId, "참가자" + userId);
+        return Player.seat(userId, "참가자" + userId, SEATED);
     }
 
     private Room withPlayers(int count) {
@@ -180,5 +182,20 @@ class RoomTest {
     @DisplayName("방장을 뺀 전원이 준비하면 시작된다 - 방장 자신의 준비 여부는 보지 않는다")
     void startsWhenEveryoneButHostIsReady() {
         assertThat(readyRoom().start(1L).status()).isEqualTo(RoomStatus.PLAYING);
+    }
+
+    @Test
+    @DisplayName("enter 하지 않은 채 유예 시간을 넘긴 좌석만 회수 대상이다")
+    void findsSeatsThatNeverEntered() {
+        Instant longAgo = Instant.parse("2026-08-23T00:00:00Z");
+        Instant deadline = longAgo.plusSeconds(30);
+
+        Room room = Room.create(7L, "방", null, new Player(1L, "김성호", null, false, null, longAgo))
+                .join(new Player(2L, "박철수", null, false, "sess-2", longAgo))
+                .join(new Player(3L, "이영희", null, false, null, deadline.plusSeconds(1)));
+
+        assertThat(room.seatsNotEnteredBefore(deadline))
+                .describedAs("소켓이 붙은 2번과 아직 유예 중인 3번은 빼고 1번만")
+                .containsExactly(1L);
     }
 }

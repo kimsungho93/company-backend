@@ -1,5 +1,6 @@
 package com.ksh.companybackend.game.domain;
 
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -65,12 +66,31 @@ public class RoomRegistry {
         }));
     }
 
-    public void leaveOtherRooms(Long userId, Long keepRoomId) {
-        rooms.entrySet().stream()
+    // 비워진 방을 돌려준다. 부르는 쪽이 남은 사람들에게 알려야 하기 때문이다 -
+    // 지우지 않으면 이전 방 사람들의 화면에 나간 사람이 계속 남는다.
+    public List<Room> leaveOtherRooms(Long userId, Long keepRoomId) {
+        return rooms.entrySet().stream()
                 .filter(entry -> !entry.getKey().equals(keepRoomId))
                 .filter(entry -> entry.getValue().has(userId))
                 .map(Map.Entry::getKey)
-                .toList()
-                .forEach(id -> leave(id, userId));
+                .toList().stream()
+                .map(id -> leave(id, userId))
+                .flatMap(Optional::stream)
+                .toList();
+    }
+
+    public Optional<Seat> findBySession(String sessionId) {
+        return rooms.values().stream()
+                .flatMap(room -> room.players().stream()
+                        .filter(player -> sessionId.equals(player.sessionId()))
+                        .map(player -> new Seat(room.id(), player.userId())))
+                .findFirst();
+    }
+
+    public List<Seat> abandonedSeats(Instant deadline) {
+        return rooms.values().stream()
+                .flatMap(room -> room.seatsNotEnteredBefore(deadline).stream()
+                        .map(userId -> new Seat(room.id(), userId)))
+                .toList();
     }
 }

@@ -6,11 +6,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import com.ksh.companybackend.game.application.RoomService;
 import com.ksh.companybackend.user.application.JwtTokenProvider;
 import com.ksh.companybackend.user.domain.User;
 import com.ksh.companybackend.user.domain.UserRepository;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -64,6 +66,9 @@ class RoomSocketIntegrationTest {
     @Autowired
     private JdbcTemplate jdbc;
 
+    @Autowired
+    private RoomService roomService;
+
     private String hostToken;
     private String guestToken;
     private String strangerToken;
@@ -93,12 +98,16 @@ class RoomSocketIntegrationTest {
     }
 
     private Long createRoom() throws Exception {
+        return createRoom(hostToken, "점심내기 한판");
+    }
+
+    private Long createRoom(String token, String name) throws Exception {
         String body = mockMvc.perform(post("/api/rooms")
-                        .header("Authorization", "Bearer " + hostToken)
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"점심내기 한판"}
-                                """))
+                                {"name":"%s"}
+                                """.formatted(name)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
@@ -106,7 +115,11 @@ class RoomSocketIntegrationTest {
     }
 
     private void joinRoom(String token) throws Exception {
-        mockMvc.perform(post("/api/rooms/{id}/join", roomId)
+        joinRoom(token, roomId);
+    }
+
+    private void joinRoom(String token, Long targetRoomId) throws Exception {
+        mockMvc.perform(post("/api/rooms/{id}/join", targetRoomId)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -265,5 +278,54 @@ class RoomSocketIntegrationTest {
         assertThat((String) JsonPath.read(error, "$.code")).isEqualTo("NOT_ROOM_HOST");
         assertThat(room.poll(1, TimeUnit.SECONDS)).describedAs("실패는 방에 브로드캐스트되지 않는다").isNull();
         guest.disconnect();
+    }
+
+    @Test
+    @DisplayName("소켓이 끊기면 방에서 빠지고 남은 사람에게 알려진다")
+    void removesPlayerOnDisconnect() throws Exception {
+        StompSession host = connect(hostToken);
+        BlockingQueue<String> frames = subscribe(host, "/topic/rooms/" + roomId);
+        host.send("/app/rooms/%d/enter".formatted(roomId), new byte[0]);
+        next(frames);
+
+        StompSession guest = connect(guestToken);
+        guest.send("/app/rooms/%d/enter".formatted(roomId), new byte[0]);
+        next(frames);
+
+        guest.disconnect();
+
+        String state = next(frames);
+        assertThat((List<String>) JsonPath.read(state, "$.players[*].name")).containsExactly("김성호");
+        host.disconnect();
+    }
+
+    @Test
+    @DisplayName("enter 하지 않고 앉아만 있던 좌석은 회수된다 - enter 한 사람은 남는다")
+    void reclaimsSeatThatNeverEntered() throws Exception {
+        StompSession host = connect(hostToken);
+        BlockingQueue<String> frames = subscribe(host, "/topic/rooms/" + roomId);
+        host.send("/app/rooms/%d/enter".formatted(roomId), new byte[0]);
+        next(frames);
+
+        roomService.reclaimSeatsAbandonedBefore(Instant.now().plusSeconds(1));
+
+        String state = next(frames);
+        assertThat((List<String>) JsonPath.read(state, "$.players[*].name")).containsExactly("김성호");
+        host.disconnect();
+    }
+
+    @Test
+    @DisplayName("다른 방으로 옮기면 이전 방에 남은 사람에게도 알려진다")
+    void broadcastsToTheRoomLeftBehind() throws Exception {
+        StompSession host = connect(hostToken);
+        BlockingQueue<String> frames = subscribe(host, "/topic/rooms/" + roomId);
+        host.send("/app/rooms/%d/enter".formatted(roomId), new byte[0]);
+        next(frames);
+
+        joinRoom(guestToken, createRoom(strangerToken, "옮겨갈 방"));
+
+        String state = next(frames);
+        assertThat((List<String>) JsonPath.read(state, "$.players[*].name")).containsExactly("김성호");
+        host.disconnect();
     }
 }
