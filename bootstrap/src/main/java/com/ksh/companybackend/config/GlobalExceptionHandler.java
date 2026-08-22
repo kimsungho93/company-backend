@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -32,6 +33,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .orElse("요청 값이 올바르지 않습니다.");
         return ResponseEntity.badRequest().body(new ErrorResponse("INVALID_INPUT", message));
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        log.warn("본문을 읽지 못함: {}", ex.getMessage());
+        return ResponseEntity.badRequest().body(new ErrorResponse("INVALID_INPUT", "요청 값이 올바르지 않습니다."));
     }
 
     @Override

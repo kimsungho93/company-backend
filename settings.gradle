@@ -2,4 +2,5 @@ rootProject.name = 'company-backend'
 
 include 'common'
 include 'user'
+include 'calendar'
 include 'bootstrap'
