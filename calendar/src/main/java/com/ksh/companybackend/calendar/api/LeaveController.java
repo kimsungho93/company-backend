@@ -8,7 +8,9 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,5 +38,11 @@ public class LeaveController {
     @ResponseStatus(HttpStatus.CREATED)
     public LeaveResponse create(@AuthenticationPrincipal Long callerId, @Valid @RequestBody LeaveCreateRequest request) {
         return LeaveResponse.from(leaveService.create(callerId, request.kind(), request.period()));
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@AuthenticationPrincipal Long callerId, @PathVariable Long id) {
+        leaveService.delete(callerId, id);
     }
 }

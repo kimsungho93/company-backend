@@ -4,8 +4,10 @@ import com.ksh.companybackend.calendar.application.dto.LeaveDetail;
 import com.ksh.companybackend.calendar.domain.DateRange;
 import com.ksh.companybackend.calendar.domain.Leave;
 import com.ksh.companybackend.calendar.domain.LeaveKind;
+import com.ksh.companybackend.calendar.domain.LeaveNotFoundException;
 import com.ksh.companybackend.calendar.domain.LeaveOverlapException;
 import com.ksh.companybackend.calendar.domain.LeaveRepository;
+import com.ksh.companybackend.calendar.domain.NotLeaveOwnerException;
 import com.ksh.companybackend.calendar.domain.UserDirectory;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +43,16 @@ public class LeaveService {
         return leaves.stream()
                 .map(leave -> LeaveDetail.of(leave, names.get(leave.getUserId())))
                 .toList();
+    }
+
+    @Transactional
+    public void delete(Long callerId, Long leaveId) {
+        Leave leave = leaveRepository.findById(leaveId).orElseThrow(LeaveNotFoundException::new);
+        if (!leave.belongsTo(callerId)) {
+            throw new NotLeaveOwnerException();
+        }
+
+        leaveRepository.delete(leave);
     }
 
     private Leave saveOrReportOverlap(Leave leave) {
