@@ -40,7 +40,7 @@ public class LeaveService {
 
     private Leave saveOrReportOverlap(Leave leave) {
         try {
-            return leaveRepository.save(leave);
+            return leaveRepository.saveAndFlush(leave);
         } catch (DataIntegrityViolationException e) {
             throw new LeaveOverlapException(leave.period().from());
         }

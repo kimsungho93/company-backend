@@ -60,6 +60,7 @@ class LeaveConcurrencyIntegrationTest {
 
     @AfterEach
     void cleanUp() {
+        jdbc.execute("DELETE FROM leave_days");
         jdbc.execute("DELETE FROM leaves");
         jdbc.execute("DELETE FROM users");
     }
@@ -115,5 +116,24 @@ class LeaveConcurrencyIntegrationTest {
 
         assertThat(statuses).describedAs("둘 다 성공해야 한다").containsExactly(201, 201);
         assertThat(rows).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("시작일이 달라도 겹치면 동시에 내도 하나만 저장된다")
+    void concurrentOverlapWithDifferentStartDatesCreatesOnlyOne() throws Exception {
+        CountDownLatch gate = new CountDownLatch(1);
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+
+        Future<Integer> first = pool.submit(submitAt(gate, "2026-08-18", "2026-08-21"));
+        Future<Integer> second = pool.submit(submitAt(gate, "2026-08-20", "2026-08-22"));
+        gate.countDown();
+
+        List<Integer> statuses = List.of(first.get(), second.get());
+        pool.shutdown();
+
+        Integer rows = jdbc.queryForObject("SELECT COUNT(*) FROM leaves WHERE user_id = ?", Integer.class, userId);
+
+        assertThat(rows).describedAs("저장된 휴가 수 (응답: %s)", statuses).isEqualTo(1);
+        assertThat(statuses).describedAs("하나는 201, 하나는 409 여야 한다").containsExactlyInAnyOrder(201, 409);
     }
 }

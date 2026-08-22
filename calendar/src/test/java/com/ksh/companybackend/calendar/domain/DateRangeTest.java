@@ -30,4 +30,12 @@ class DateRangeTest {
         assertThat(new DateRange(MON, MON).days()).isEqualTo(1);
         assertThat(new DateRange(MON, MON.plusDays(3)).days()).isEqualTo(4);
     }
+
+    @Test
+    @DisplayName("기간이 덮는 날짜를 양끝 포함해 펼친다")
+    void expandsToDates() {
+        assertThat(new DateRange(MON, MON.plusDays(2)).dates())
+                .containsExactly(MON, MON.plusDays(1), MON.plusDays(2));
+        assertThat(new DateRange(MON, MON).dates()).containsExactly(MON);
+    }
 }
