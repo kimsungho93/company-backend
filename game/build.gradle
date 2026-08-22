@@ -1,0 +1,11 @@
+dependencies {
+    implementation project(':common')
+
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // 방 비밀번호 해시(PasswordEncoder)와 @AuthenticationPrincipal 타입만 필요하다.
+    // calendar·user 와 같은 이유로 스타터가 아니라 core 만 쓴다.
+    implementation 'org.springframework.security:spring-security-core'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}

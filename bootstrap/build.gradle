@@ -8,6 +8,7 @@ dependencies {
     implementation project(':common')
     implementation project(':user')
     implementation project(':calendar')
+    implementation project(':game')
 
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-security'
