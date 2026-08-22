@@ -47,6 +47,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/reissue",
                                 "/api/auth/logout").permitAll()
+                        // WebSocket 통과 확인용 임시 경로. WebSocketProbeConfig 와 같이 걷어낸다.
+                        .requestMatchers("/api/ws").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
