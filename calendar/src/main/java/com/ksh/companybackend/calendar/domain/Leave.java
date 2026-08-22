@@ -7,8 +7,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.time.LocalDate;
 import lombok.AccessLevel;
@@ -16,7 +16,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "leaves", indexes = @Index(name = "idx_leaves_user", columnList = "userId, startDate"))
+@Table(name = "leaves",
+        uniqueConstraints = @UniqueConstraint(name = "uk_leaves_user_start", columnNames = {"user_id", "start_date"}))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Leave {
 

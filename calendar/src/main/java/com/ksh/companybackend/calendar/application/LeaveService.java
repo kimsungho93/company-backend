@@ -4,8 +4,10 @@ import com.ksh.companybackend.calendar.application.dto.LeaveDetail;
 import com.ksh.companybackend.calendar.domain.DateRange;
 import com.ksh.companybackend.calendar.domain.Leave;
 import com.ksh.companybackend.calendar.domain.LeaveKind;
+import com.ksh.companybackend.calendar.domain.LeaveOverlapException;
 import com.ksh.companybackend.calendar.domain.LeaveRepository;
 import com.ksh.companybackend.calendar.domain.UserDirectory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +24,10 @@ public class LeaveService {
 
     @Transactional
     public LeaveDetail create(Long userId, LeaveKind kind, DateRange period) {
-        Leave saved = leaveRepository.save(Leave.of(userId, kind, period));
+        Leave leave = Leave.of(userId, kind, period);
+        verifyNoOverlap(leave);
+
+        Leave saved = saveOrReportOverlap(leave);
 
         return new LeaveDetail(
                 saved.getId(),
@@ -31,5 +36,23 @@ public class LeaveService {
                 saved.getKind(),
                 saved.period().from(),
                 saved.period().to());
+    }
+
+    private Leave saveOrReportOverlap(Leave leave) {
+        try {
+            return leaveRepository.save(leave);
+        } catch (DataIntegrityViolationException e) {
+            throw new LeaveOverlapException(leave.period().from());
+        }
+    }
+
+    private void verifyNoOverlap(Leave leave) {
+        DateRange period = leave.period();
+
+        leaveRepository.findAllActiveBetween(leave.getUserId(), period.from(), period.to()).stream()
+                .findFirst()
+                .ifPresent(conflicting -> {
+                    throw new LeaveOverlapException(conflicting);
+                });
     }
 }

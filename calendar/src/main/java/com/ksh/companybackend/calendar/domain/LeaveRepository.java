@@ -13,6 +13,9 @@ public interface LeaveRepository extends Repository<Leave, Long> {
     @Query("select l from Leave l where l.endDate >= :from and l.startDate <= :to")
     List<Leave> findAllActiveBetween(LocalDate from, LocalDate to);
 
+    @Query("select l from Leave l where l.userId = :userId and l.endDate >= :from and l.startDate <= :to")
+    List<Leave> findAllActiveBetween(Long userId, LocalDate from, LocalDate to);
+
     Leave save(Leave leave);
 
     void delete(Leave leave);
